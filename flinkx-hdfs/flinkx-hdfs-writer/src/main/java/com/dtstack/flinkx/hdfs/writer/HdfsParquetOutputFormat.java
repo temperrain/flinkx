@@ -53,11 +53,7 @@ public class HdfsParquetOutputFormat extends HdfsOutputFormat {
 
     private ParquetWriter<Group> writer;
 
-    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-
     private static Calendar cal = Calendar.getInstance();
-
-    private static SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private static final long NANO_SECONDS_PER_DAY = 86400_000_000_000L;
 
@@ -65,7 +61,7 @@ public class HdfsParquetOutputFormat extends HdfsOutputFormat {
 
     static {
         try {
-            cal.setTime(sdf.parse("1970-01-01"));
+            cal.setTime(DateUtil.getDateFormatter().parse("1970-01-01"));
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -108,7 +104,7 @@ public class HdfsParquetOutputFormat extends HdfsOutputFormat {
                     if(valObj instanceof java.sql.Timestamp){
                         val = String.valueOf(((java.sql.Timestamp) valObj).getTime());
                     } else if(valObj instanceof Date){
-                        val = sdf.format((Date)valObj);
+                        val = DateUtil.getDateFormatter().format((Date)valObj);
                     } else {
                         val = String.valueOf(valObj);
                     }
@@ -169,28 +165,28 @@ public class HdfsParquetOutputFormat extends HdfsOutputFormat {
             switch (colType){
                 case "tinyint" :
                 case "smallint" :
-                case "int" : typeBuilder.required(PrimitiveType.PrimitiveTypeName.INT32).named(name);break;
-                case "bigint" : typeBuilder.required(PrimitiveType.PrimitiveTypeName.INT64).named(name);break;
-                case "float" : typeBuilder.required(PrimitiveType.PrimitiveTypeName.FLOAT).named(name);break;
-                case "double" : typeBuilder.required(PrimitiveType.PrimitiveTypeName.DOUBLE).named(name);break;
-                case "binary" :typeBuilder.required(PrimitiveType.PrimitiveTypeName.BINARY).named(name);break;
+                case "int" : typeBuilder.optional(PrimitiveType.PrimitiveTypeName.INT32).named(name);break;
+                case "bigint" : typeBuilder.optional(PrimitiveType.PrimitiveTypeName.INT64).named(name);break;
+                case "float" : typeBuilder.optional(PrimitiveType.PrimitiveTypeName.FLOAT).named(name);break;
+                case "double" : typeBuilder.optional(PrimitiveType.PrimitiveTypeName.DOUBLE).named(name);break;
+                case "binary" :typeBuilder.optional(PrimitiveType.PrimitiveTypeName.BINARY).named(name);break;
                 case "char" :
                 case "varchar" :
-                case "string" : typeBuilder.required(PrimitiveType.PrimitiveTypeName.BINARY).as(OriginalType.UTF8).named(name);break;
-                case "boolean" : typeBuilder.required(PrimitiveType.PrimitiveTypeName.BOOLEAN).named(name);break;
-                case "timestamp" : typeBuilder.required(PrimitiveType.PrimitiveTypeName.INT96).named(name);break;
-                case "date" :typeBuilder.required(PrimitiveType.PrimitiveTypeName.INT32).as(OriginalType.DATE).named(name);break;
+                case "string" : typeBuilder.optional(PrimitiveType.PrimitiveTypeName.BINARY).as(OriginalType.UTF8).named(name);break;
+                case "boolean" : typeBuilder.optional(PrimitiveType.PrimitiveTypeName.BOOLEAN).named(name);break;
+                case "timestamp" : typeBuilder.optional(PrimitiveType.PrimitiveTypeName.INT96).named(name);break;
+                case "date" :typeBuilder.optional(PrimitiveType.PrimitiveTypeName.INT32).as(OriginalType.DATE).named(name);break;
                 default:
                     if (colType.contains("decimal")){
                         int precision = Integer.parseInt(colType.substring(colType.indexOf("(") + 1,colType.indexOf(",")).trim());
                         int scale = Integer.parseInt(colType.substring(colType.indexOf(",") + 1,colType.indexOf(")")).trim());
-                        typeBuilder.required(PrimitiveType.PrimitiveTypeName.BINARY)
+                        typeBuilder.optional(PrimitiveType.PrimitiveTypeName.BINARY)
                                 .as(OriginalType.DECIMAL)
                                 .precision(precision)
                                 .scale(scale)
                                 .named(name);
                     } else {
-                        typeBuilder.required(PrimitiveType.PrimitiveTypeName.BINARY).named(name);
+                        typeBuilder.optional(PrimitiveType.PrimitiveTypeName.BINARY).named(name);
                     }
                     break;
             }
@@ -204,7 +200,7 @@ public class HdfsParquetOutputFormat extends HdfsOutputFormat {
         if(NumberUtils.isNumber(val)){
             dst = longToByteArray(Long.parseLong(val));
         } else {
-            Date date = sdf2.parse(val);
+            Date date = DateUtil.getDateTimeFormatter().parse(val);
             dst = longToByteArray(date.getTime());
         }
 
@@ -255,7 +251,7 @@ public class HdfsParquetOutputFormat extends HdfsOutputFormat {
     }
 
     private int getDay(String dateStr) throws Exception{
-        Date date = sdf.parse(dateStr);
+        Date date = DateUtil.getDateFormatter().parse(dateStr);
         return (int)((date.getTime() - cal.getTimeInMillis()) / (1000 * 60 * 60 * 24));
     }
 }

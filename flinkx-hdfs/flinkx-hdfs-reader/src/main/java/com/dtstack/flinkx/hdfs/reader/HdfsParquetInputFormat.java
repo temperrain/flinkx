@@ -70,8 +70,6 @@ public class HdfsParquetInputFormat extends HdfsInputFormat {
 
     private static final long NANOS_PER_MILLISECOND = TimeUnit.MILLISECONDS.toNanos(1);
 
-    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
     @Override
     protected void configureAnythingElse() {
         try {
@@ -168,39 +166,39 @@ public class HdfsParquetInputFormat extends HdfsInputFormat {
     }
 
     private Object getData(Group currentLine,String type,int index){
-        Object data;
-        switch (type){
-            case "tinyint" :
-            case "smallint" :
-            case "int" : data = currentLine.getInteger(index,0);break;
-            case "bigint" : data = currentLine.getLong(index,0);break;
-            case "float" : data = currentLine.getFloat(index,0);break;
-            case "double" : data = currentLine.getDouble(index,0);break;
-            case "binary" :data = currentLine.getBinary(index,0);break;
-            case "char" :
-            case "varchar" :
-            case "string" : data = currentLine.getString(index,0);break;
-            case "boolean" : data = currentLine.getBoolean(index,0);break;
-            case "timestamp" :{
-                long time = getTimestampMillis(currentLine.getInt96(index,0));
-                data = new Timestamp(time);
-                break;
-            }
-            case "decimal" : {
-                String val = currentLine.getValueToString(index,0);
-                data = Double.parseDouble(val);
-                break;
-            }
-            case "date" : {
-                String val = currentLine.getValueToString(index,0);
-                try{
-                    data = sdf.parse(val);
-                } catch (ParseException pe){
-                    data = val;
+        Object data = null;
+        try{
+            switch (type){
+                case "tinyint" :
+                case "smallint" :
+                case "int" : data = currentLine.getInteger(index,0);break;
+                case "bigint" : data = currentLine.getLong(index,0);break;
+                case "float" : data = currentLine.getFloat(index,0);break;
+                case "double" : data = currentLine.getDouble(index,0);break;
+                case "binary" :data = currentLine.getBinary(index,0);break;
+                case "char" :
+                case "varchar" :
+                case "string" : data = currentLine.getString(index,0);break;
+                case "boolean" : data = currentLine.getBoolean(index,0);break;
+                case "timestamp" :{
+                    long time = getTimestampMillis(currentLine.getInt96(index,0));
+                    data = new Timestamp(time);
+                    break;
                 }
-                break;
+                case "decimal" : {
+                    String val = currentLine.getValueToString(index,0);
+                    data = Double.parseDouble(val);
+                    break;
+                }
+                case "date" : {
+                    String val = currentLine.getValueToString(index,0);
+                    data = new Timestamp(Integer.parseInt(val) * 60 * 60 * 24 * 1000L).toString().substring(0,10);
+                    break;
+                }
+                default: data = currentLine.getValueToString(index,0);break;
             }
-            default: data = currentLine.getValueToString(index,0);break;
+        } catch (Exception e){
+            LOG.error("{}",e);
         }
 
         return data;
